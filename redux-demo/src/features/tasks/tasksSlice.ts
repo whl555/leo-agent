@@ -61,7 +61,7 @@ const tasksSlice = createSlice({
   }),
   reducers: {
     addTask: {
-      prepare(title: string, priority: TaskPriority) {
+      prepare(title: string, priority: TaskPriority, meta?: Record<string, unknown>) {
         return {
           payload: {
             id: nanoid(),
@@ -70,6 +70,7 @@ const tasksSlice = createSlice({
             completed: false,
             createdAt: new Date().toISOString(),
           } satisfies Task,
+          meta,
         }
       },
       reducer: (state, action: PayloadAction<Task>) => {
