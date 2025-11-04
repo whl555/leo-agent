@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { VoiceChatStatus } from '../../../../types/voice-chat';
-import { useAudioRecorder } from '../../../../hooks/useAudioRecorder';
+import { VoiceChatStatus } from '../../types/voice-chat';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { Animation } from './Animation';
 import { VolumeVisualizer } from './VolumeVisualizer';
 import './VoiceCallPage.css';
@@ -26,27 +26,28 @@ const createVoiceChatMachine = (context: {
     calling: {
       connectionReady: () => {
         console.log('[状态机] 连接已建立，播放欢迎语音');
-        return 'welcome';
       },
       connectionLost: () => {
         console.log('[状态机] 连接失败');
-        return 'network_error';
       },
+      stopCall: () => {
+        console.log('stop calling')
+      }
     },
     // 欢迎状态 - 播放欢迎语音
     welcome: {
       finishWelcome: () => {
         console.log('[状态机] 欢迎语音播放完成，开始监听');
         context.startListening();
-        return 'listening';
       },
       interrupt: () => {
         console.log('[状态机] 欢迎语音被打断，进入监听');
         context.clearResponse();
         context.startListening();
-        return 'listening';
       },
-      connectionLost: () => 'network_error',
+      connectionLost: () => {
+        console.log('[状态机] 连接失败');
+      },
     },
     // 思考状态 - 用户说完话，等待服务端响应
     thinking: {
@@ -60,7 +61,9 @@ const createVoiceChatMachine = (context: {
         context.startListening();
         return 'listening';
       },
-      connectionLost: () => 'network_error',
+      connectionLost: () => {
+        console.log('[状态机] 连接失败');
+      },
     },
     // 说话状态 - 播放AI流式语音
     speaking: {
@@ -75,7 +78,9 @@ const createVoiceChatMachine = (context: {
         context.startListening();
         return 'listening';
       },
-      connectionLost: () => 'network_error',
+      connectionLost: () => {
+        console.log('[状态机] 连接失败');
+      },
     },
     // 监听状态 - 等待用户说话
     listening: {
@@ -83,25 +88,24 @@ const createVoiceChatMachine = (context: {
         console.log('[状态机] 检测到用户说话，进入思考状态');
         return 'thinking';
       },
-      connectionLost: () => 'network_error',
+      connectionLost: () => {
+        console.log('[状态机] 连接失败');
+      },
     },
     // 网络错误状态
     network_error: {
       retry: () => {
         console.log('[状态机] 尝试重新连接');
         context.reconnect();
-        return 'reconnecting';
       },
     },
     // 重连中状态
     reconnecting: {
       connectionReady: () => {
         console.log('[状态机] 重连成功');
-        return 'calling';
       },
       connectionLost: () => {
         console.log('[状态机] 重连失败');
-        return 'network_error';
       },
     },
   }, {

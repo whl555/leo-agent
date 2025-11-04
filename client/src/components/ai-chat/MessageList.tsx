@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { ChatMessage } from '../types'
+import { ChatMessage } from '../../types/ai-chat'
 
 import './MessageList.css'
 

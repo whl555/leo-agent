@@ -1,4 +1,4 @@
-import { ChatProvider } from '../context/ChatContext'
+import { ChatProvider } from '../../contexts/ChatContext'
 
 import { AiChatPanel } from './AiChatPanel'
 

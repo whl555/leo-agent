@@ -1,4 +1,4 @@
-import { VoiceChatStatus } from '../../../../types/voice-chat';
+import { VoiceChatStatus } from '../../types/voice-chat';
 import { useEffect, useRef } from 'react';
 import './Animation.css';
 
