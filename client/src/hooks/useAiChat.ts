@@ -1,161 +1,113 @@
-import { useState, useCallback } from 'react'
-import { IMessage, STATUS, PlayStatus } from '../types/ai-chat'
+import { startTransition, useCallback, useRef } from 'react'
 
-interface UseAiChatReturn {
-  messageList: IMessage[]
-  userInput: string
-  setUserInput: (input: string) => void
-  isLoading: boolean
-  remainTimes: number
-  sessionId: string
-  sendMessage: (message?: string) => void
-  retry: () => void
-  longPressId: string
-  setLongPressId: (id: string) => void
-  showFeedbackPopUp: boolean
-  showRemainTimes: boolean
-  inputContainerHeight: number
-  fixTop: boolean
-  audioEnable: boolean
-  scrollToBottom: () => void
-  getHistory: () => Promise<any>
-  getVoiceHistory: () => Promise<any>
-  pauseAllAudio: () => void
-  playHelloAudio: () => void
-  getRecommend: () => Promise<any>
-  getRemainTimes: () => Promise<any>
-  operationFuncs: {
-    read: (msg: IMessage) => void
-    copy: (content: string) => void
-    like: (msg: IMessage) => void
-    dislike: (msg: IMessage) => void
-  },
-  setRemainTimes: (times: number) => void
-}
+import { useChatContext } from '../contexts/ChatContext'
+import { streamChat } from '../services/StreamService'
+import { ChatMessage } from '../types/ai-chat'
 
-export const useAiChat = (): UseAiChatReturn => {
-  const [messageList, setMessageList] = useState<IMessage[]>([])
-  const [userInput, setUserInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [remainTimes, setRemainTimes] = useState(0)
-  const [sessionId, setSessionId] = useState('')
-  const [longPressId, setLongPressId] = useState('')
-  const [showFeedbackPopUp, setShowFeedbackPopUp] = useState(false)
-  const [showRemainTimes, setShowRemainTimes] = useState(false)
-  const [inputContainerHeight, setInputContainerHeight] = useState(82)
-  const [fixTop, setFixTop] = useState(false)
-  const [audioEnable, setAudioEnable] = useState(true)
+export function useAiChat() {
+  const { state, dispatch } = useChatContext()
+  const cancelStreamRef = useRef<(() => void) | null>(null)
 
-  const scrollToBottom = useCallback(() => {
-    // 实现滚动到底部的逻辑
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: 'smooth'
-    })
-  }, [])
-
-  const getHistory = useCallback(async () => {
-    // 实现获取历史记录的逻辑
-    return { sessionList: [] }
-  }, [])
-
-  const getVoiceHistory = useCallback(async () => {
-    // 实现获取语音历史记录的逻辑
-    return { sessionList: [] }
-  }, [])
-
-  const pauseAllAudio = useCallback(() => {
-    // 实现暂停所有音频的逻辑
-  }, [])
-
-  const playHelloAudio = useCallback(() => {
-    // 实现播放问候音频的逻辑
-  }, [])
-
-  const getRecommend = useCallback(async () => {
-    // 实现获取推荐问题的逻辑
-  }, [])
-
-  const getRemainTimes = useCallback(async () => {
-    // 实现获取剩余次数的逻辑
-  }, [])
-
-  const sendMessage = useCallback((message?: string) => {
-    const content = message || userInput
-    if (!content.trim()) return
-
-    const newMessage: IMessage = {
-      content,
-      feedbackType: 0,
-      messageId: Date.now().toString(),
-      role: 'user',
-      status: STATUS.LOADING,
-      type: 'text'
+  const sendMessage = useCallback(async (message?: string) => {
+    const content = message?.trim() || ''
+    if (!content) {
+      return
     }
 
-    setMessageList(prev => [...prev, newMessage])
-    setUserInput('')
-    setIsLoading(true)
+    // 1. ??????
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content,
+      status: 'idle',
+      createdAt: Date.now()
+    }
+    dispatch({ type: 'ADD_MESSAGE', payload: userMessage })
 
-    // 模拟发送消息
-    setTimeout(() => {
-      const aiMessage: IMessage = {
-        content: `这是对"${content}"的回复`,
-        feedbackType: 0,
-        messageId: (Date.now() + 1).toString(),
-        role: 'assistant',
-        status: STATUS.DONE,
-        type: 'text',
-        playStatus: PlayStatus.NONE
-      }
-      setMessageList(prev => [...prev.slice(0, -1), { ...prev[prev.length - 1], status: STATUS.DONE }, aiMessage])
-      setIsLoading(false)
-    }, 2000)
-  }, [userInput])
+    // 2. ?? AI ??????
+    const assistantMessageId = `assistant-${Date.now()}`
+    const assistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      status: 'streaming',
+      createdAt: Date.now()
+    }
+    dispatch({ type: 'ADD_MESSAGE', payload: assistantMessage })
+    dispatch({ type: 'SET_STREAMING', payload: true })
 
-  const retry = useCallback(() => {
-    // 实现重试逻辑
-  }, [])
+    try {
+      // 3. ??????
+      let accumulatedContent = ''
+      
+      const cancelFn = await streamChat(content, {
+        onMessage: (chunk: string) => {
+          accumulatedContent += chunk
+          startTransition(() => {
+            dispatch({
+              type: 'UPDATE_MESSAGE',
+              payload: { id: assistantMessageId, content: accumulatedContent }
+            })
+          })
+        },
+        onComplete: () => {
+          startTransition(() => {
+            dispatch({
+              type: 'UPDATE_MESSAGE_STATUS',
+              payload: { id: assistantMessageId, status: 'idle' }
+            })
+            dispatch({ type: 'SET_STREAMING', payload: false })
+          })
+          cancelStreamRef.current = null
+        },
+        onError: (error: Error) => {
+          startTransition(() => {
+            dispatch({
+              type: 'UPDATE_MESSAGE_STATUS',
+              payload: { id: assistantMessageId, status: 'error' }
+            })
+            dispatch({ type: 'SET_ERROR', payload: error.message })
+            dispatch({ type: 'SET_STREAMING', payload: false })
+          })
+          cancelStreamRef.current = null
+        }
+      })
 
-  const operationFuncs = {
-    read: useCallback((msg: IMessage) => {
-      // 实现阅读消息的逻辑
-    }, []),
-    copy: useCallback((content: string) => {
-      navigator.clipboard.writeText(content)
-    }, []),
-    like: useCallback((msg: IMessage) => {
-      // 实现点赞逻辑
-    }, []),
-    dislike: useCallback((msg: IMessage) => {
-      // 实现点踩逻辑
-    }, [])
-  }
+      cancelStreamRef.current = cancelFn
+
+    } catch (error) {
+      dispatch({
+        type: 'UPDATE_MESSAGE_STATUS',
+        payload: { id: assistantMessageId, status: 'error' }
+      })
+      dispatch({
+        type: 'SET_ERROR',
+        payload: error instanceof Error ? error.message : '????'
+      })
+      dispatch({ type: 'SET_STREAMING', payload: false })
+    }
+  }, [dispatch])
+
+  const stopStreaming = useCallback(() => {
+    if (cancelStreamRef.current) {
+      cancelStreamRef.current()
+      cancelStreamRef.current = null
+      dispatch({ type: 'SET_STREAMING', payload: false })
+    }
+  }, [dispatch])
+
+  const resetChat = useCallback(() => {
+    stopStreaming()
+    dispatch({ type: 'RESET_CHAT' })
+  }, [dispatch, stopStreaming])
 
   return {
-    messageList,
-    userInput,
-    setUserInput,
-    isLoading,
-    remainTimes,
-    sessionId,
+    messages: state.messages,
+    isStreaming: state.isStreaming,
+    error: state.error,
+    remainQuota: state.remainQuota,
     sendMessage,
-    retry,
-    longPressId,
-    setLongPressId,
-    showFeedbackPopUp,
-    showRemainTimes,
-    inputContainerHeight,
-    fixTop,
-    audioEnable,
-    scrollToBottom,
-    getHistory,
-    getVoiceHistory,
-    pauseAllAudio,
-    playHelloAudio,
-    getRecommend,
-    getRemainTimes,
-    setRemainTimes,
-    operationFuncs
+    stopStreaming,
+    resetChat
   }
 }

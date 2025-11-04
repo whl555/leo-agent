@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { useAiChat } from '../hooks/useAiChat'
+import { useAiChat } from '../../hooks/useAiChat'
 import { TitleBar } from './TitleBar'
 import { MessageList } from './MessageList'
 import { MessageComposer } from './MessageComposer'

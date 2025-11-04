@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { useAutoSpeak } from '../../../../contexts/AutoSpeakContext'
-import { VolumeOnIcon } from '../../../components/icons/VolumeOnIcon'
-import { VolumeOffIcon } from '../../../components/icons/VolumeOffIcon'
-import { PhoneIcon } from '../../../components/icons/PhoneIcon'
+import { useAutoSpeak } from '../../contexts/AutoSpeakContext'
+import { VolumeOnIcon } from '../icons/VolumeOnIcon'
+import { VolumeOffIcon } from '../icons/VolumeOffIcon'
+import { PhoneIcon } from '../icons/PhoneIcon'
 
 import './TitleBar.css'
 

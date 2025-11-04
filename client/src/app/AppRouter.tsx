@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { AiChatPage } from './features/ai-chat/components/AiChatPage'
-import { VoiceCallPage } from './features/voice-chat/components/VoiceCallPage'
+import { AiChatPage } from '../components/ai-chat/AiChatPage'
+import { VoiceCallPage } from '../components/voice-chat/VoiceCallPage'
 
 export function AppRouter() {
   return (

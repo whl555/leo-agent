@@ -1,8 +1,8 @@
 import { createContext, useContext, useReducer, ReactNode, Dispatch } from 'react'
 
-import { ChatMessage } from '../types'
+import { ChatMessage } from '../types/ai-chat'
 
-// ============ 状态类型定义 ============
+// ============ ?????? ============
 export interface ChatState {
   messages: ChatMessage[]
   isStreaming: boolean
@@ -10,7 +10,7 @@ export interface ChatState {
   remainQuota: number
 }
 
-// ============ Action 类型定义 ============
+// ============ Action ???? ============
 export type ChatAction =
   | { type: 'ADD_MESSAGE'; payload: ChatMessage }
   | { type: 'UPDATE_MESSAGE'; payload: { id: string; content: string } }
@@ -70,11 +70,11 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
   }
 }
 
-// ============ 初始状态 ============
+// ============ ???? ============
 const SYSTEM_GREETING: ChatMessage = {
   id: 'system-greeting',
   role: 'assistant',
-  content: '你好，我是Stream AI，有什么可以帮你？',
+  content: 'Holly AI',
   status: 'idle',
   createdAt: Date.now()
 }
@@ -117,4 +117,3 @@ export function useChatContext(): ChatContextValue {
   }
   return context
 }
-
