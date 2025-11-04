@@ -2,14 +2,13 @@ import { IAiCompanionChatMessage } from './ai-chat'
 
 // 语音聊天状态
 export enum VoiceChatStatus {
-  CALLING,
-  WELCOME,
-  THINKING,
-  SPEAKING,
-  LISTENING,
-  NETWORK_ERROR,
-  SERVER_ERROR,
-  RECONECTING,
+  CALLING = "calling",
+  WELCOME = "welcome",
+  THINKING = "thinking",
+  SPEAKING = 'speaking',
+  LISTENING = 'listening',
+  NETWORK_ERROR = 'network_error',
+  RECONNECTING = 'reconnecting',
 }
 
 export interface AiCompanionBreakCallRequest {

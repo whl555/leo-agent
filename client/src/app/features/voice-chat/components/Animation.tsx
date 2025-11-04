@@ -23,9 +23,7 @@ export function Animation({ status, volume = 0 }: AnimationProps) {
         return '我在听，请说话';
       case VoiceChatStatus.NETWORK_ERROR:
         return '网络错误，请检查网络';
-      case VoiceChatStatus.SERVER_ERROR:
-        return '服务器错误，点击重试';
-      case VoiceChatStatus.RECONECTING:
+      case VoiceChatStatus.RECONNECTING:
         return '重新连接中...';
       default:
         return '';
@@ -35,7 +33,7 @@ export function Animation({ status, volume = 0 }: AnimationProps) {
   const getAnimationClass = () => {
     switch (status) {
       case VoiceChatStatus.CALLING:
-      case VoiceChatStatus.RECONECTING:
+      case VoiceChatStatus.RECONNECTING:
         return 'animation-pulse';
       case VoiceChatStatus.THINKING:
         return 'animation-thinking';
@@ -44,7 +42,6 @@ export function Animation({ status, volume = 0 }: AnimationProps) {
       case VoiceChatStatus.LISTENING:
         return 'animation-listening';
       case VoiceChatStatus.NETWORK_ERROR:
-      case VoiceChatStatus.SERVER_ERROR:
         return 'animation-error';
       default:
         return '';
